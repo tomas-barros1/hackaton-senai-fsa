@@ -13,30 +13,37 @@
         }
 
         .dashboard {
-            padding: 20px;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         .card {
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
         }
 
         .card-header {
             background-color: #dc3545;
             color: white;
             border-radius: 15px 15px 0 0 !important;
-            padding: 15px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 0;
         }
 
         th, td {
-            padding: 12px;
+            padding: 15px;
             border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
         }
 
         th {
@@ -58,19 +65,23 @@
         }
 
         #map {
-            height: 400px;
-            border-radius: 15px;
+            height: 450px;
+            width: 100%;
+            border-radius: 8px;
         }
 
         .stats-card {
-            text-align: center;
-            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 25px 15px;
         }
 
         .stats-number {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 10px 0;
+            font-size: 28px;
+            margin: 15px 0 5px;
         }
 
         .refresh-button {
@@ -227,16 +238,35 @@
         .location-actions {
             display: flex;
             align-items: center;
-            height: 31px; /* Altura aproximada dos botões */
+            gap: 8px;
         }
 
         .badge.bg-secondary {
             padding: 8px 12px;
             font-weight: normal;
             letter-spacing: 0.5px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            height: 100%;
+            justify-content: center;
+            min-width: 120px;
+            height: 32px;
+        }
+
+        /* Estilo para a coluna de descrição */
+        .table td:nth-child(5) {
+            max-width: 200px; /* Largura máxima */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Mostra o texto completo ao passar o mouse */
+        .table td:nth-child(5):hover {
+            white-space: normal;
+            overflow: visible;
+            background-color: #f8f9fa;
+            position: relative;
+            z-index: 1;
         }
     </style>
 </head>
@@ -295,6 +325,7 @@
                                             <th>Nome</th>
                                             <th>WhatsApp</th>
                                             <th>Natureza</th>
+                                            <th>Descrição</th>
                                             <th>Status</th>
                                             <th>Localização</th>
                                         </tr>
@@ -452,6 +483,7 @@
                         <td>${atendimento.nomeUsuario || '-'}</td>
                         <td>${formatarWhatsApp(atendimento.numeroWhatsapp)}</td>
                         <td>${atendimento.naturezaEmergencia || '-'}</td>
+                        <td>${atendimento.descricaoEmergencia || '-'}</td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <span class="status-${(atendimento.status || '').toLowerCase()}">${atendimento.status || '-'}</span>

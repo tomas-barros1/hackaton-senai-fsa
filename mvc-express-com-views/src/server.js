@@ -4,10 +4,8 @@ const path = require("path");
 
 const app = express();
 
-// Middlewares - ORDEM É IMPORTANTE!
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Configurações do EJS
 app.set("view engine", "ejs");
