@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Painel de Atendimentos SAMU</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="../public/favicon.png" type="image/x-icon">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard {
+            padding: 20px;
+        }
+
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: #dc3545;
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .status-pendente { 
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .status-atendimento { 
+            color: #2196F3;
+            font-weight: bold;
+        }
+        .status-finalizado { 
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 15px;
+        }
+
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stats-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .refresh-button {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+
+        .location-button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .location-button:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-group .btn {
+            margin-right: 4px; /* Espaço entre os botões */
+        }
+
+        .btn-group .btn:last-child {
+            margin-right: 0; /* Remove margem do último botão */
+        }
+
+        .d-flex.gap-2 .btn {
+            margin-right: 4px;
+        }
+        .d-flex.gap-2 .btn:last-child {
+            margin-right: 0;
+        }
+
+        .badge {
+            padding: 8px 12px !important; /* Padding maior para a badge */
+            font-size: 0.9rem;
+        }
+
+        /* Estilos para responsividade */
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 10px;
+            }
+
+            .card {
+                margin-bottom: 15px;
+            }
+
+            /* Ajusta a tabela para telas pequenas */
+            .table-responsive {
+                font-size: 0.9rem;
+            }
+
+            /* Ajusta altura do mapa em telas menores */
+            #map {
+                height: 300px;
+            }
+
+            /* Ajusta as estatísticas em telas menores */
+            .stats-card {
+                padding: 15px;
+            }
+
+            .stats-number {
+                font-size: 20px;
+            }
+
+            /* Ajusta os botões em telas menores */
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            /* Melhora visualização da tabela em dispositivos móveis */
+            .table-responsive table {
+                white-space: nowrap;
+            }
+
+            /* Ajusta o layout das colunas em telas menores */
+            .col-md-8, .col-md-4 {
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Para telas muito pequenas */
+        @media (max-width: 576px) {
+            .dashboard {
+                padding: 5px;
+            }
+
+            .card-header {
+                padding: 10px;
+            }
+
+            .stats-card {
+                padding: 10px;
+            }
+
+            /* Ajusta o tamanho dos ícones */
+            .fa-2x {
+                font-size: 1.5em;
+            }
+
+            /* Melhora a visualização dos botões em linha */
+            .d-flex.gap-2 {
+                gap: 0.3rem !important;
+            }
+
+            .badge {
+                display: inline-block;
+                width: 100%;
+                text-align: center;
+                margin: 2px 0;
+            }
+        }
+
+        /* Ajustes gerais de responsividade */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .d-flex.gap-2 {
+            display: flex !important;
+            gap: 0.5rem !important;
+            flex-wrap: nowrap;
+        }
+
+        .badge.bg-secondary {
+            padding: 8px 12px;
+            font-weight: normal;
+            letter-spacing: 0.5px;
+        }
+
+        /* Melhora a visualização em tablets */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .dashboard {
+                padding: 15px;
+            }
+
+            .stats-card {
+                padding: 15px;
+            }
+
+            #map {
+                height: 350px;
+            }
+        }
+
+        /* Estilo para alinhar a badge com os botões */
+        .location-actions {
+            display: flex;
+            align-items: center;
+            height: 31px; /* Altura aproximada dos botões */
+        }
+
+        .badge.bg-secondary {
+            padding: 8px 12px;
+            font-weight: normal;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="container-fluid">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                            <h4 class="mb-0 me-2"><i class="fas fa-ambulance me-2"></i>Painel de Atendimentos SAMU</h4>
+                            <button onclick="carregarAtendimentos()" class="btn btn-light btn-sm mt-2 mt-sm-0">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12 col-sm-4 mb-3 mb-sm-0">
+                    <div class="card stats-card">
+                        <i class="fas fa-clock fa-2x text-warning"></i>
+                        <div class="stats-number" id="pendentes">0</div>
+                        <div>Pendentes</div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4 mb-3 mb-sm-0">
+                    <div class="card stats-card">
+                        <i class="fas fa-spinner fa-2x text-primary"></i>
+                        <div class="stats-number" id="em-atendimento">0</div>
+                        <div>Em Atendimento</div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4">
+                    <div class="card stats-card">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                        <div class="stats-number" id="finalizados">0</div>
+                        <div>Finalizados</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12 col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Lista de Atendimentos</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Protocolo</th>
+                                            <th>Nome</th>
+                                            <th>WhatsApp</th>
+                                            <th>Natureza</th>
+                                            <th>Status</th>
+                                            <th>Localização</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="atendimentosBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Mapa do Atendimento</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="map" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalLabel">Alterar Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="atendimentoId">
+                    <div class="mb-3">
+                        <label for="novoStatus" class="form-label">Novo Status:</label>
+                        <select class="form-select" id="novoStatus">
+                            <option value="Pendente">Pendente</option>
+                            <option value="Em Atendimento">Em Atendimento</option>
+                            <option value="Finalizado">Finalizado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="atualizarStatus()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let currentMarker;
+
+        function formatarWhatsApp(numero) {
+            if (!numero) return '-';
+            // Remove os 2 primeiros e os 4 últimos caracteres
+            return numero.slice(2, -5);
+        }
+
+        function initMap() {
+            try {
+                const mapElement = document.getElementById('map');
+                if (!mapElement) {
+                    console.error('Elemento do mapa não encontrado');
+                    return;
+                }
+
+                // Inicializa o mapa com Leaflet
+                map = L.map('map').setView([-14.235004, -51.92528], 4);
+                
+                // Adiciona um estilo mais limpo do OpenStreetMap
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '©OpenStreetMap, ©CartoDB'
+                }).addTo(map);
+
+                console.log('Mapa inicializado com sucesso');
+            } catch (error) {
+                console.error('Erro ao inicializar mapa:', error);
+            }
+        }
+
+        function abrirGoogleMaps(lat, lng) {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        }
+
+        function mostrarLocalizacao(lat, lng, info) {
+            if (!lat || !lng) {
+                console.error('Latitude ou longitude inválidos');
+                return;
+            }
+
+            try {
+                if (!map) {
+                    console.error('Mapa não inicializado');
+                    return;
+                }
+
+                // Remove marcador anterior
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                }
+
+                // Adiciona novo marcador
+                currentMarker = L.marker([parseFloat(lat), parseFloat(lng)])
+                    .addTo(map)
+                    .bindPopup(`
+                        ${info}<br>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="abrirGoogleMaps(${lat}, ${lng})">
+                            <i class="fas fa-external-link-alt"></i> Abrir no Google Maps
+                        </button>
+                    `)
+                    .openPopup();
+
+                // Centraliza o mapa
+                map.setView([parseFloat(lat), parseFloat(lng)], 15);
+
+            } catch (error) {
+                console.error('Erro ao mostrar localização:', error);
+            }
+        }
+
+        function atualizarEstatisticas(atendimentos) {
+            const pendentes = atendimentos.filter(a => a.status === 'Pendente').length;
+            const emAtendimento = atendimentos.filter(a => a.status === 'Em Atendimento').length;
+            const finalizados = atendimentos.filter(a => a.status === 'Finalizado').length;
+
+            document.getElementById('pendentes').textContent = pendentes;
+            document.getElementById('em-atendimento').textContent = emAtendimento;
+            document.getElementById('finalizados').textContent = finalizados;
+        }
+
+        async function carregarAtendimentos() {
+            try {
+                const response = await fetch('/api/atendimentos');
+                const atendimentos = await response.json();
+                
+                const tbody = document.getElementById('atendimentosBody');
+                tbody.innerHTML = '';
+
+                atendimentos.forEach(atendimento => {
+                    console.log('ID do atendimento:', atendimento._id); // Debug
+                    const row = document.createElement('tr');
+                    
+                    const temLocalizacao = atendimento.localizacao && 
+                                         atendimento.localizacao.latitude && 
+                                         atendimento.localizacao.longitude;
+                    
+                    row.innerHTML = `
+                        <td>${atendimento.protocolo || '-'}</td>
+                        <td>${atendimento.nomeUsuario || '-'}</td>
+                        <td>${formatarWhatsApp(atendimento.numeroWhatsapp)}</td>
+                        <td>${atendimento.naturezaEmergencia || '-'}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="status-${(atendimento.status || '').toLowerCase()}">${atendimento.status || '-'}</span>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="abrirModalStatus('${atendimento._id}', '${atendimento.status}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                ${temLocalizacao ? `
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary btn-sm" onclick="mostrarLocalizacao(
+                                            '${atendimento.localizacao.latitude}', 
+                                            '${atendimento.localizacao.longitude}',
+                                            '<b>Paciente:</b> ${atendimento.nomeUsuario}<br><b>Status:</b> ${atendimento.status}'
+                                        )">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="abrirGoogleMaps(
+                                            ${atendimento.localizacao.latitude}, 
+                                            ${atendimento.localizacao.longitude}
+                                        )">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </button>
+                                    </div>
+                                ` : '<span class="badge bg-secondary">Sem localização</span>'}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                atualizarEstatisticas(atendimentos);
+            } catch (error) {
+                console.error('Erro ao carregar atendimentos:', error);
+            }
+        }
+
+        // Garante que o DOM está carregado antes de inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Iniciando aplicação...');
+            initMap();
+            carregarAtendimentos();
+        });
+
+        // Atualiza a cada 30 segundos
+        setInterval(carregarAtendimentos, 30000);
+
+        // Variável global para o modal
+        let statusModal;
+
+        // Função para abrir o modal
+        function abrirModalStatus(id, statusAtual) {
+            const modal = document.getElementById('statusModal');
+            if (!modal) {
+                console.error('Modal não encontrado');
+                return;
+            }
+
+            // Define os valores
+            document.getElementById('atendimentoId').value = id;
+            document.getElementById('novoStatus').value = statusAtual;
+
+            // Abre o modal
+            if (!statusModal) {
+                statusModal = new bootstrap.Modal(modal);
+            }
+            statusModal.show();
+        }
+
+        // Função para atualizar o status
+        async function atualizarStatus() {
+            const id = document.getElementById('atendimentoId').value;
+            const novoStatus = document.getElementById('novoStatus').value;
+
+            console.log('Tentando atualizar:', { id, novoStatus });
+
+            try {
+                const response = await fetch(`/api/atendimentos/${id}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+
+                console.log('Status da resposta:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Erro do servidor:', errorText);
+                    throw new Error(`Erro ao atualizar status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Resposta do servidor:', data);
+
+                // Fecha o modal e atualiza a tabela
+                if (statusModal) {
+                    statusModal.hide();
+                }
+                await carregarAtendimentos();
+
+            } catch (error) {
+                console.error('Erro:', error);
+                alert(error.message);
+            }
+        }
+    </script>
+</body>
+</html> 
